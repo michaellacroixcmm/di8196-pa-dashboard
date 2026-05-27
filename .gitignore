@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.DS_Store
+.env
+
+# older sample data versions
+test_platform_dataset_size_example_v3.csv
+test_platform_dataset_size_example_v4.csv
+
+# reference PDFs not needed at runtime
+branding guide.pdf
+Overview - Volume.pdf
+Overview - Volume with Breakouts.pdf

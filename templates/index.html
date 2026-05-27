@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pharmacy Platform Intelligence</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  background: #fff1eb; font-size: 12px; color: #565656;
+}
+.page-wrap {
+  max-width: 1440px; margin: 0 auto;
+  height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+  background: #fff; box-shadow: 0 0 28px rgba(1,66,106,.18);
+}
+
+/* ── HEADER ─────────────────────────────────────────── */
+.hdr {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 10px 14px 8px; background: #fff; flex-shrink: 0;
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(to right, #eb0768 30%, #1e91d5 30%, #1e91d5 60%, #ff8f1c 60%, #ff8f1c 85%, #01426a 85%) 1;
+}
+.hdr-logo { height: 28px; display: block; margin-bottom: 5px; }
+.hdr-left h1 {
+  font-size: 27px; font-weight: 700; color: #01426a; line-height: 1.2;
+}
+.hdr-left p {
+  font-size: 9.5px; color: #777; max-width: 440px; margin-top: 3px; line-height: 1.45;
+}
+.hdr-right { display: flex; align-items: flex-start; gap: 0; flex-shrink: 0; }
+.warning {
+  color: #eb0768; font-weight: 700; font-size: 11px;
+  margin-right: 12px; padding-top: 2px; white-space: nowrap;
+}
+.kpi-tile {
+  border: 1px solid #ff8f1c; padding: 5px 14px; min-width: 140px; text-align: center;
+}
+.kpi-tile + .kpi-tile { border-left: none; }
+.kpi-tile .kl { font-size: 9.5px; color: #777; font-weight: 600; white-space: nowrap; }
+.kpi-tile .kv { font-size: 22px; font-weight: 700; color: #ff8f1c; line-height: 1.2; }
+
+/* ── BODY ────────────────────────────────────────────── */
+.body { display: flex; flex: 1; overflow: hidden; }
+
+/* ── SIDEBAR ─────────────────────────────────────────── */
+.sidebar {
+  width: 196px; min-width: 196px; background: #fdf6f1;
+  border-right: 2px solid #ff8f1c; overflow-y: auto;
+  padding: 8px 6px; display: flex; flex-direction: column; gap: 2px;
+}
+.sidebar-info {
+  font-size: 11.5px; color: #555; line-height: 1.5;
+  padding: 2px 2px 6px; border-bottom: 1px solid #d0d3d4; margin-bottom: 4px;
+}
+.clear-btn {
+  width: 22px; height: 22px; background: #eb0768; color: #fff;
+  border: none; cursor: pointer; font-weight: 700; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px; flex-shrink: 0;
+}
+.clear-btn:hover { background: #c5005a; }
+.filter-group-label {
+  font-size: 12px; font-weight: 700; color: #01426a;
+  margin-top: 8px; margin-bottom: 2px; padding-left: 2px;
+}
+.filter-item { position: relative; }
+.filter-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 3px 4px; cursor: pointer; font-size: 12.5px; user-select: none;
+  border-radius: 2px; min-height: 22px;
+}
+.filter-row:hover { background: #e2e6ea; }
+.filter-name {
+  color: #01426a; font-weight: 500;
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 118px;
+}
+.filter-val { color: #777; font-size: 11.5px; margin-left: 4px; white-space: nowrap; }
+.filter-dropdown {
+  display: none; position: fixed; z-index: 200;
+  background: #fff; border: 1px solid #aaa;
+  min-width: 200px; max-height: 220px; overflow-y: auto;
+  box-shadow: 2px 4px 8px rgba(0,0,0,.18);
+}
+.filter-dropdown.open { display: block; }
+.filter-dropdown label {
+  display: flex; align-items: center; padding: 3px 8px; gap: 6px;
+  font-size: 10.5px; cursor: pointer; white-space: nowrap;
+}
+.filter-dropdown label:hover { background: #e8ecef; }
+.filter-dropdown .all-option {
+  border-bottom: 1px solid #ddd; font-weight: 700; background: #f8f9fa;
+}
+
+/* ── MAIN ────────────────────────────────────────────── */
+.main {
+  flex: 1; overflow-y: auto; padding: 10px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+/* ── SECTION HEADER ──────────────────────────────────── */
+.section-hdr {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #fff4ec; padding: 5px 10px;
+  border-left: 4px solid #ff8f1c; border-top: 1px solid #ffd9b0; border-bottom: 1px solid #ffd9b0; border-right: 1px solid #ffd9b0;
+}
+.section-title-main { font-size: 16px; font-weight: 700; color: #01426a; }
+.section-title-sub  { font-size: 11px; color: #777; margin-top: 1px; }
+.ipa-vol            { text-align: right; }
+.ipa-vol .ipa-lbl   { font-size: 10px; color: #777; font-weight: 600; }
+.ipa-vol .ipa-val   { font-size: 18px; font-weight: 700; color: #ff8f1c; line-height: 1.2; }
+
+/* ── DATE RANGE ──────────────────────────────────────── */
+.date-range-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 10px; background: #fdf6f1;
+  border-top: 1px solid #ffd9b0; border-bottom: 1px solid #ffd9b0;
+  font-size: 11px; color: #565656; flex-shrink: 0;
+}
+.date-range-bar label { font-weight: 600; color: #01426a; white-space: nowrap; }
+.date-range-bar select {
+  border: 1px solid #ff8f1c; border-radius: 3px;
+  padding: 2px 6px; font-size: 11px; color: #01426a;
+  background: #fff; cursor: pointer;
+}
+.date-reset-btn {
+  background: none; border: 1px solid #eb0768; color: #eb0768;
+  border-radius: 3px; padding: 2px 8px; font-size: 11px;
+  cursor: pointer; font-weight: 600; white-space: nowrap;
+}
+.date-reset-btn:hover { background: #eb0768; color: #fff; }
+
+/* ── SELECTED FILTERS ────────────────────────────────── */
+.sel-filters { font-size: 10.5px; color: #555; padding: 2px 0; }
+.sel-filters span + span::before { content: '  |  '; color: #aaa; }
+
+/* ── RATE KPIs ───────────────────────────────────────── */
+.rate-kpis { display: flex; border: 1px solid #ffd9b0; }
+.rate-kpi  { flex: 1; padding: 8px 12px; border-right: 1px solid #ffd9b0; text-align: center; }
+.rate-kpi:last-child { border-right: none; }
+.rate-pct  { font-size: 26px; font-weight: 700; color: #ff8f1c; line-height: 1; }
+.rate-lbl  { font-size: 13px; font-weight: 700; color: #01426a; margin-top: 3px; }
+.rate-det  { font-size: 11px; color: #888; margin-top: 2px; }
+
+/* ── CHART ───────────────────────────────────────────── */
+.chart-wrap { position: relative; height: 345px; max-width: 1050px; flex-shrink: 0; }
+
+/* ── BREAKOUTS ───────────────────────────────────────── */
+.breakouts { padding: 4px 0; border-top: 1px solid #e8ecef; }
+.bk-title  { font-size: 10.5px; font-weight: 700; color: #1a2744; }
+.bk-sub    { font-size: 9.5px; color: #888; }
+.bk-options {
+  display: flex; gap: 14px; margin-top: 5px; flex-wrap: wrap;
+}
+.bk-options label {
+  font-size: 10.5px; color: #333;
+  display: flex; align-items: center; gap: 4px; cursor: pointer;
+}
+.bk-legend { font-size: 10px; color: #777; margin-top: 3px; }
+.topn-row {
+  display: none; align-items: center; gap: 8px;
+  margin-top: 6px; font-size: 11px; color: #565656;
+}
+.topn-row.visible { display: flex; }
+.topn-row select {
+  border: 1px solid #ff8f1c; border-radius: 3px;
+  padding: 2px 6px; font-size: 11px; color: #01426a; background: #fff;
+  cursor: pointer;
+}
+.topn-count { color: #888; font-size: 10.5px; }
+.bk-color-key {
+  display: none; margin-top: 6px; gap: 6px 16px; flex-wrap: wrap;
+  max-height: 130px; overflow-y: auto; padding: 2px 0;
+}
+.bk-color-key.visible { display: flex; }
+.bk-color-key-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #333; }
+.bk-color-swatch { width: 14px; height: 14px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── TABLE ───────────────────────────────────────────── */
+.table-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.table-title { font-size: 11.5px; font-weight: 700; color: #01426a; }
+.export-btn {
+  background: #ff8f1c; color: #fff; border: none; cursor: pointer;
+  font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 3px;
+  white-space: nowrap;
+}
+.export-btn:hover { background: #e07a10; }
+.tbl-wrap  { overflow-x: auto; }
+.bk-table  { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+.bk-table th {
+  background: #01426a; color: #fff; font-weight: 700;
+  padding: 4px 8px; text-align: right; border: 1px solid #01365a;
+  white-space: nowrap; position: sticky; top: 0;
+}
+.bk-table th:first-child { text-align: left; min-width: 90px; }
+.bk-table td {
+  padding: 2px 7px; text-align: right;
+  border: 1px solid #e8ddd6; color: #565656; white-space: nowrap;
+}
+.bk-table td:first-child { text-align: left; font-weight: 600; color: #01426a; }
+.bk-table tr:nth-child(even) td { background: #fdf6f1; }
+.bk-table .grand-total {
+  background: #ff8f1c !important; font-weight: 700; color: #fff;
+  border-left: 2px solid #e07a10;
+}
+.bk-table th.sortable { cursor: pointer; user-select: none; }
+.bk-table th.sortable:hover { background: #01355a; }
+.bk-table th.sort-active { background: #eb0768; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-left">
+    <img src="/logo" alt="CoverMyMeds" class="hdr-logo">
+    <h1>Pharmacy Platform Intelligence</h1>
+    <p>This dashboard provides a monthly view into Pharmacy Initiated volume. Use this dashboard to
+    check in on clients, certain reject codes, assess different breakdowns of pharmacy requests and more.<br>
+    If you have any questions on this dashboard please reach out to the User Network Analytics team
+    in the Network Analytics Questions Teams channel.</p>
+  </div>
+  <div class="hdr-right">
+    <div class="warning">Do not share externally</div>
+    <div class="kpi-tile">
+      <div class="kl">Total PA Volume</div>
+      <div class="kv" id="kpi-total-pa">—</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kl">Total Gross Revenue</div>
+      <div class="kv" id="kpi-total-rev">—</div>
+    </div>
+  </div>
+</header>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-info">
+      Click the 'Category Filters' button for a drop down of filters.<br><br>
+      The data can be broken down further with the 'Breakouts' section under the bar graph.
+    </div>
+    <button class="clear-btn" onclick="clearFilters()" title="Clear all filters">✕</button>
+    <div id="filter-list"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Section header -->
+    <div class="section-hdr">
+      <div>
+        <div class="section-title-main">High Level Summary of PA Requests</div>
+        <div class="section-title-sub">Pharmacy Initiated</div>
+      </div>
+      <div class="ipa-vol">
+        <div class="ipa-lbl">IPA Volume</div>
+        <div class="ipa-val" id="ipa-volume">—</div>
+      </div>
+    </div>
+
+    <!-- Selected filters bar -->
+    <div class="sel-filters">
+      <span>Account Selected: <strong id="sel-account">All</strong></span>
+      <span>API Client Selected: <strong id="sel-api-client">All</strong></span>
+      <span>Reject Code Selected: <strong id="sel-reject-code">All</strong></span>
+    </div>
+
+    <!-- Rate KPIs -->
+    <div class="rate-kpis">
+      <div class="rate-kpi">
+        <div class="rate-pct" id="rate-physician">—</div>
+        <div class="rate-lbl">Physician Access Rate</div>
+        <div class="rate-det" id="rate-physician-det">—</div>
+      </div>
+      <div class="rate-kpi">
+        <div class="rate-pct" id="rate-sent">—</div>
+        <div class="rate-lbl">Sent to Plan Rate</div>
+        <div class="rate-det" id="rate-sent-det">—</div>
+      </div>
+      <div class="rate-kpi">
+        <div class="rate-pct" id="rate-approval">—</div>
+        <div class="rate-lbl">Approval Rate</div>
+        <div class="rate-det" id="rate-approval-det">—</div>
+      </div>
+    </div>
+
+    <!-- Bar chart -->
+    <div class="chart-wrap">
+      <canvas id="main-chart"></canvas>
+    </div>
+
+    <!-- Date range bar -->
+    <div class="date-range-bar">
+      <label>From:</label>
+      <select id="date-from" onchange="onDateChange()"></select>
+      <label>To:</label>
+      <select id="date-to" onchange="onDateChange()"></select>
+      <button class="date-reset-btn" onclick="resetDateRange()">Reset</button>
+    </div>
+
+    <!-- Breakouts -->
+    <div class="breakouts">
+      <div class="bk-title">Breakouts – Select an option below to slice the data</div>
+      <div class="bk-sub">(hold for more options)</div>
+      <div class="bk-options">
+        <label><input type="radio" name="breakout" value="total" checked> Is Total</label>
+        <label><input type="radio" name="breakout" value="is_epa"> Is ePA</label>
+        <label><input type="radio" name="breakout" value="is_sponsored"> Is Sponsored PA</label>
+        <label><input type="radio" name="breakout" value="is_real"> Is Real</label>
+        <label><input type="radio" name="breakout" value="state"> State</label>
+        <label><input type="radio" name="breakout" value="revenue_source"> Revenue Source</label>
+        <label><input type="radio" name="breakout" value="pa_start_type"> PA Start Type</label>
+        <label><input type="radio" name="breakout" value="reject_code"> Reject Code</label>
+        <label><input type="radio" name="breakout" value="account"> Account Name</label>
+        <label><input type="radio" name="breakout" value="plan_name"> Plan Name</label>
+        <label><input type="radio" name="breakout" value="drug_name"> Drug Name</label>
+      </div>
+      <div class="topn-row" id="topn-row">
+        <span>Show:</span>
+        <select id="topn-select" onchange="loadData()">
+          <option value="20">Top 20</option>
+          <option value="50">Top 50</option>
+          <option value="">All</option>
+        </select>
+        <span>by volume</span>
+        <span class="topn-count" id="topn-count"></span>
+      </div>
+      <div id="bk-color-key" class="bk-color-key"></div>
+    </div>
+
+    <!-- Breakdown table -->
+    <div>
+      <div class="table-header">
+        <div class="table-title">Breakdown of PA Volume</div>
+        <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="bk-table">
+          <thead id="table-head"></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div><!-- end .body -->
+</div><!-- end .page-wrap -->
+
+<script>
+Chart.register(ChartDataLabels);
+
+// ── FILTER DEFINITIONS ────────────────────────────────────────────────────
+const FILTER_DEFS = [
+  { param: 'account',         label: 'Pharmacy Account' },
+  { param: 'api_client',      label: 'System Vendor' },
+  { param: 'revenue_source',  label: 'Revenue Source R...' },
+  { param: 'pa_start_type',   label: 'PA Start Type' },
+  { param: 'is_sponsored',    label: 'Is Sponsored PA' },
+  { param: 'is_real',         label: 'Is Real' },
+  { param: 'is_epa',          label: 'Is Epa' },
+  { param: 'reject_code',     label: 'Reject Code - Order' },
+  { param: 'rejection_code',  label: 'Rejection Code...' },
+  { param: 'state',           label: 'State' },
+  { param: 'lob',             label: 'Line Of Business' },
+  { param: 'drug_name',       label: 'DDID & Drug Name',  group: 'Drug Breakdown' },
+  { param: 'drug_group',      label: 'Drug Group',        group: 'Drug Breakdown' },
+  { param: 'plan_name',       label: 'Plan Name',         group: 'Drug Breakdown' },
+  { param: 'generic_flag',    label: 'Generic DDID Flag', group: 'Drug Breakdown' },
+  { param: 'multisource',     label: 'Multisource',       group: 'Drug Breakdown' },
+  { param: 'otc',             label: 'Is OTC',            group: 'Drug Breakdown' },
+];
+
+const PREDEFINED_COLORS = {
+  is_epa:       { Classic: '#01426a', ePA: '#1e91d5' },
+  is_sponsored: { 'Not Sponsored': '#01426a', Sponsored: '#ff8f1c' },
+  is_real:      { Real: '#ff8f1c', 'Not Real': '#c8bdb8' },
+};
+
+// CoverMyMeds brand palette — primary colors first, then tints/variants
+const PALETTE = [
+  '#ff8f1c', // CMM orange
+  '#eb0768', // CMM magenta
+  '#01426a', // CMM navy
+  '#1e91d5', // CMM blue
+  '#ffc06a', // light orange
+  '#f472a8', // light magenta
+  '#4a8fa8', // mid blue-teal
+  '#003354', // deep navy
+  '#ff6b00', // dark orange
+  '#b5004d', // dark magenta
+  '#0d6a94', // medium blue
+  '#ffb347', // pale orange
+  '#87c4e8', // pale blue
+  '#d63384', // pink-magenta
+  '#2a6496', // slate blue
+  '#ffd4a8', // cream-orange
+  '#00558b', // bright navy
+  '#ffa8c8', // pale pink
+  '#8b1a4e', // deep magenta
+  '#5ba3c9', // sky blue
+];
+
+function assignColor(breakout, label, index) {
+  const pre = PREDEFINED_COLORS[breakout];
+  if (pre && pre[label] !== undefined) return pre[label];
+  return PALETTE[index % PALETTE.length];
+}
+
+const appState = { filters: {}, options: {}, breakout: 'total' };
+let chart = null;
+
+// ── DATE RANGE ────────────────────────────────────────────────────────────
+function fmtMonthLabel(yyyy_mm_dd) {
+  const d = new Date(yyyy_mm_dd + 'T00:00:00');
+  return d.toLocaleString('default', { month: 'short', year: 'numeric' });
+}
+
+function populateDateSelects(months) {
+  const fromSel = document.getElementById('date-from');
+  const toSel   = document.getElementById('date-to');
+  [fromSel, toSel].forEach(sel => sel.innerHTML = '');
+  months.forEach(m => {
+    const label = fmtMonthLabel(m);
+    fromSel.appendChild(new Option(label, m));
+    toSel.appendChild(new Option(label, m));
+  });
+  // Default: full range selected
+  toSel.selectedIndex = toSel.options.length - 1;
+}
+
+function onDateChange() {
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
+  // Enforce from ≤ to
+  if (from > to) document.getElementById('date-to').value = from;
+  loadData();
+}
+
+function resetDateRange() {
+  const fromSel = document.getElementById('date-from');
+  const toSel   = document.getElementById('date-to');
+  fromSel.selectedIndex = 0;
+  toSel.selectedIndex   = toSel.options.length - 1;
+  loadData();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+async function init() {
+  const res = await fetch('/api/filters');
+  appState.options = await res.json();
+  if (appState.options.months) populateDateSelects(appState.options.months);
+  renderSidebar();
+  await loadData();
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const container = document.getElementById('filter-list');
+  let lastGroup = null;
+
+  FILTER_DEFS.forEach(def => {
+    if (def.group && def.group !== lastGroup) {
+      lastGroup = def.group;
+      const lbl = document.createElement('div');
+      lbl.className = 'filter-group-label';
+      lbl.textContent = def.group;
+      container.appendChild(lbl);
+    }
+
+    const item = document.createElement('div');
+    item.className = 'filter-item';
+    item.id = `fi-${def.param}`;
+
+    const row = document.createElement('div');
+    row.className = 'filter-row';
+    row.innerHTML = `
+      <span class="filter-name">${def.label}</span>
+      <span class="filter-val" id="fv-${def.param}">All</span>
+    `;
+    row.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDropdown(def.param, row);
+    });
+
+    const dd = document.createElement('div');
+    dd.className = 'filter-dropdown';
+    dd.id = `dd-${def.param}`;
+    dd.addEventListener('click', e => e.stopPropagation());
+
+    // "All" option
+    const allLabel = document.createElement('label');
+    allLabel.className = 'all-option';
+    const allCb = document.createElement('input');
+    allCb.type = 'checkbox';
+    allCb.checked = true;
+    allCb.addEventListener('change', () => clearFilterSelection(def.param));
+    allLabel.appendChild(allCb);
+    allLabel.appendChild(document.createTextNode(' All'));
+    dd.appendChild(allLabel);
+
+    const opts = appState.options[def.param] || [];
+    opts.forEach(opt => {
+      const lbl = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = opt;
+      cb.dataset.param = def.param;
+      cb.addEventListener('change', () => handleFilterChange(def.param));
+      lbl.appendChild(cb);
+      lbl.appendChild(document.createTextNode(' ' + opt));
+      dd.appendChild(lbl);
+    });
+
+    item.appendChild(row);
+    document.body.appendChild(dd); // attach to body for fixed positioning
+    container.appendChild(item);
+  });
+
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.filter-dropdown.open').forEach(d => d.classList.remove('open'));
+  });
+}
+
+function toggleDropdown(param, rowEl) {
+  const dd = document.getElementById(`dd-${param}`);
+  const wasOpen = dd.classList.contains('open');
+  document.querySelectorAll('.filter-dropdown.open').forEach(d => d.classList.remove('open'));
+  if (!wasOpen) {
+    const rect = rowEl.getBoundingClientRect();
+    dd.style.top  = `${rect.bottom + 2}px`;
+    dd.style.left = `${rect.left}px`;
+    dd.classList.add('open');
+  }
+}
+
+function handleFilterChange(param) {
+  const dd = document.getElementById(`dd-${param}`);
+  const checked = [...dd.querySelectorAll(`input[data-param="${param}"]:checked`)].map(c => c.value);
+  dd.querySelector('.all-option input').checked = checked.length === 0;
+  appState.filters[param] = checked;
+  updateFilterLabel(param);
+  loadData();
+}
+
+function clearFilterSelection(param) {
+  const dd = document.getElementById(`dd-${param}`);
+  dd.querySelectorAll(`input[data-param="${param}"]`).forEach(c => c.checked = false);
+  appState.filters[param] = [];
+  updateFilterLabel(param);
+  loadData();
+}
+
+function updateFilterLabel(param) {
+  const vals = appState.filters[param] || [];
+  const el = document.getElementById(`fv-${param}`);
+  if (!el) return;
+  if (vals.length === 0)     el.textContent = 'All';
+  else if (vals.length === 1) el.textContent = vals[0].length > 16 ? vals[0].slice(0, 14) + '…' : vals[0];
+  else                        el.textContent = `${vals.length} selected`;
+}
+
+function clearFilters() {
+  appState.filters = {};
+  FILTER_DEFS.forEach(def => {
+    const dd = document.getElementById(`dd-${def.param}`);
+    if (dd) {
+      dd.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
+      const allCb = dd.querySelector('.all-option input');
+      if (allCb) allCb.checked = true;
+    }
+    updateFilterLabel(def.param);
+  });
+  loadData();
+}
+
+// ── DATA LOADING ──────────────────────────────────────────────────────────
+// High-cardinality breakouts get a Top 10 default; others default to All
+const HIGH_CARD = new Set(['state','reject_code','account','plan_name','drug_name']);
+
+function buildQS() {
+  const p = new URLSearchParams();
+  Object.entries(appState.filters).forEach(([param, vals]) => {
+    vals.forEach(v => p.append(param, v));
+  });
+  p.set('breakout', appState.breakout);
+  const topN = document.getElementById('topn-select').value;
+  if (topN) p.set('top_n', topN);
+  const dateFrom = document.getElementById('date-from')?.value;
+  const dateTo   = document.getElementById('date-to')?.value;
+  const allMonths = appState.options.months || [];
+  // Only send params when not already covering the full range
+  if (dateFrom && dateFrom !== allMonths[0])             p.set('date_from', dateFrom);
+  if (dateTo   && dateTo   !== allMonths[allMonths.length - 1]) p.set('date_to', dateTo);
+  return p.toString();
+}
+
+async function loadData() {
+  const res = await fetch(`/api/data?${buildQS()}`);
+  const data = await res.json();
+  updateDashboard(data);
+}
+
+// ── UPDATE DASHBOARD ──────────────────────────────────────────────────────
+function updateDashboard(data) {
+  const k = data.kpis, s = data.selected;
+
+  document.getElementById('kpi-total-pa').textContent  = k.total_pa;
+  document.getElementById('kpi-total-rev').textContent = k.total_revenue;
+  document.getElementById('ipa-volume').textContent    = k.ipa_volume;
+
+  document.getElementById('sel-account').textContent    = s.account;
+  document.getElementById('sel-api-client').textContent = s.api_client;
+  document.getElementById('sel-reject-code').textContent = s.reject_code;
+
+  document.getElementById('rate-physician').textContent     = k.physician_rate;
+  document.getElementById('rate-physician-det').textContent = `${k.physician_num} Accessed PAs over Total PAs`;
+  document.getElementById('rate-sent').textContent          = k.sent_rate;
+  document.getElementById('rate-sent-det').textContent      = `${k.sent_num} Sent to Plan over Total PAs`;
+  document.getElementById('rate-approval').textContent      = k.approval_rate;
+  document.getElementById('rate-approval-det').textContent  = `${k.approval_num} Approved PAs over Total PAs`;
+
+  const processedDatasets = updateChart(data.chart);
+  renderColorKey(processedDatasets);
+  updateTable(data.table);
+
+  // Update Top N count label
+  const countEl = document.getElementById('topn-count');
+  if (data.total_series !== null && data.total_series !== undefined) {
+    const showing = processedDatasets.length;
+    countEl.textContent = showing < data.total_series
+      ? `(showing ${showing} of ${data.total_series})`
+      : `(${data.total_series} total)`;
+  } else {
+    countEl.textContent = '';
+  }
+}
+
+// ── CHART ─────────────────────────────────────────────────────────────────
+function fmtY(v) {
+  if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1e3) return `${(v / 1e3).toFixed(0)}K`;
+  return String(v);
+}
+
+function stackTotal(ctx) {
+  return ctx.chart.data.datasets.reduce((s, ds) => s + (ds.data[ctx.dataIndex] || 0), 0);
+}
+
+function buildLabels(isTotal) {
+  if (isTotal) {
+    return {
+      bar: {
+        anchor: 'end', align: 'end', offset: -2,
+        formatter: fmtY,
+        font: { size: 9, weight: '600' },
+        color: '#333',
+      },
+    };
+  }
+  return {
+    // No display callback — use formatter returning null to suppress zero/tiny values
+    seg: {
+      anchor: 'center', align: 'center',
+      formatter: (v, ctx) => {
+        if (!v || v <= 0) return null;
+        const tot = stackTotal(ctx);
+        return tot > 0 && v / tot >= 0.04 ? fmtY(v) : null;
+      },
+      color: '#fff',
+      backgroundColor: 'rgba(0,0,0,0.22)',
+      borderRadius: 3,
+      padding: { top: 2, bottom: 2, left: 4, right: 4 },
+      font: { size: 11, weight: '600' },
+    },
+    tot: {
+      anchor: 'end', align: 'end', offset: 18,
+      formatter: (_, ctx) => {
+        if (ctx.datasetIndex !== ctx.chart.data.datasets.length - 1) return null;
+        return fmtY(stackTotal(ctx));
+      },
+      color: '#1a2744',
+      font: { size: 9, weight: '700' },
+      display: (ctx) => ctx.datasetIndex === ctx.chart.data.datasets.length - 1,
+    },
+  };
+}
+
+function updateChart(cd) {
+  const isTotal = appState.breakout === 'total';
+
+  // No datalabels on individual datasets — the global plugin config handles everything
+  const datasets = cd.datasets.map((ds, i) => ({
+    ...ds,
+    backgroundColor: assignColor(appState.breakout, ds.label, i),
+    borderWidth: 0,
+    borderRadius: isTotal ? 2 : 0,
+  }));
+
+  if (chart) {
+    chart.data.labels   = cd.labels;
+    chart.data.datasets = datasets;
+    // Mutate the labels in place — avoids replacing the whole datalabels object
+    chart.options.plugins.datalabels.labels = buildLabels(isTotal);
+    chart.update();
+  } else {
+    chart = new Chart(document.getElementById('main-chart').getContext('2d'), {
+      type: 'bar',
+      data: { labels: cd.labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${ctx.raw.toLocaleString()}`,
+            },
+          },
+          datalabels: { labels: buildLabels(isTotal) },
+        },
+        datasets: {
+          bar: { barPercentage: 0.85, categoryPercentage: 0.88 },
+        },
+        scales: {
+          x: {
+            stacked: true,
+            ticks: { font: { size: 10 }, maxRotation: 35, minRotation: 35 },
+            grid: { display: false },
+          },
+          y: {
+            stacked: true,
+            title: { display: true, text: 'Sum of PA Requests', font: { size: 10 }, color: '#555' },
+            ticks: { font: { size: 10 }, callback: fmtY },
+            grid: { color: '#e8ecef' },
+          },
+        },
+        layout: { padding: { top: 24 } },
+      },
+    });
+  }
+  return datasets;
+}
+
+// ── TABLE (SORTABLE) ──────────────────────────────────────────────────────
+let tableState = { headers: [], rows: [], sortCol: null, sortDir: -1 };
+
+function updateTable(td) {
+  tableState.headers = td.headers;
+  tableState.rows    = td.rows;
+  tableState.sortCol = null;
+  tableState.sortDir = -1;
+  renderTable();
+}
+
+function sortTable(colKey) {
+  if (tableState.sortCol == colKey) {
+    tableState.sortDir *= -1;
+  } else {
+    tableState.sortCol = colKey;
+    tableState.sortDir = -1;
+  }
+  renderTable();
+}
+
+function renderTable() {
+  const { headers, rows, sortCol, sortDir } = tableState;
+
+  const rowsAug = rows.map(r => ({
+    cells: r,
+    total: r.slice(1).reduce((s, v) => s + (parseInt(v.replace(/,/g, ''), 10) || 0), 0),
+  }));
+
+  if (sortCol !== null) {
+    rowsAug.sort((a, b) => {
+      const av = sortCol === 'total' ? a.total : (parseInt(a.cells[sortCol].replace(/,/g, ''), 10) || 0);
+      const bv = sortCol === 'total' ? b.total : (parseInt(b.cells[sortCol].replace(/,/g, ''), 10) || 0);
+      return sortDir * (bv - av);
+    });
+  }
+
+  const allH = [...headers, 'Grand Total'];
+  document.getElementById('table-head').innerHTML = '<tr>' +
+    allH.map((h, i) => {
+      if (i === 0) return `<th>${h}</th>`;
+      const isGT   = i === allH.length - 1;
+      const key    = isGT ? 'total' : i;
+      const active = sortCol == key;
+      const arrow  = active ? (sortDir === -1 ? ' ↓' : ' ↑') : '';
+      const cls    = ['sortable', isGT ? 'grand-total' : '', active ? 'sort-active' : ''].filter(Boolean).join(' ');
+      return `<th class="${cls}" onclick="sortTable(${isGT ? "'total'" : i})">${h}${arrow}</th>`;
+    }).join('') + '</tr>';
+
+  document.getElementById('table-body').innerHTML = rowsAug.map(({ cells, total }) =>
+    '<tr>' + cells.map(c => `<td>${c}</td>`).join('') +
+    `<td class="grand-total">${total.toLocaleString()}</td></tr>`
+  ).join('');
+}
+
+// ── COLOR KEY ─────────────────────────────────────────────────────────────
+function renderColorKey(datasets) {
+  const key = document.getElementById('bk-color-key');
+  if (appState.breakout === 'total' || datasets.length <= 1) {
+    key.innerHTML = ''; key.classList.remove('visible'); return;
+  }
+  key.innerHTML = datasets.map(ds =>
+    `<div class="bk-color-key-item">
+       <div class="bk-color-swatch" style="background:${ds.backgroundColor}"></div>
+       <span>${ds.label}</span>
+     </div>`
+  ).join('');
+  key.classList.add('visible');
+}
+
+// ── BREAKOUT RADIOS ───────────────────────────────────────────────────────
+document.querySelectorAll('input[name="breakout"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    appState.breakout = radio.value;
+    const topnRow = document.getElementById('topn-row');
+    const topnSel = document.getElementById('topn-select');
+    if (radio.value === 'total') {
+      topnRow.classList.remove('visible');
+      topnSel.value = '';
+    } else {
+      topnRow.classList.add('visible');
+      // Default high-cardinality breakouts to Top 10; others to All
+      topnSel.value = HIGH_CARD.has(radio.value) ? '20' : '';
+    }
+    loadData();
+  });
+});
+
+// ── EXPORT ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const { headers, rows } = tableState;
+  if (!headers.length) return;
+
+  const allHeaders = [...headers, 'Grand Total'];
+  const allRows = rows.map(r => {
+    const total = r.slice(1).reduce((s, v) => s + (parseInt(v.replace(/,/g, ''), 10) || 0), 0);
+    return [...r, total.toLocaleString()];
+  });
+
+  const escape = v => `"${String(v).replace(/"/g, '""')}"`;
+  const lines  = [
+    allHeaders.map(escape).join(','),
+    ...allRows.map(r => r.map(escape).join(',')),
+  ];
+
+  const blob  = new Blob([lines.join('\r\n')], { type: 'text/csv' });
+  const url   = URL.createObjectURL(blob);
+  const a     = document.createElement('a');
+  const label = appState.breakout === 'total' ? 'total' : appState.breakout;
+  a.href      = url;
+  a.download  = `pa_volume_${label}_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── START ─────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
