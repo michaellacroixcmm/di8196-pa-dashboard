@@ -43,18 +43,19 @@ df = load_data()
 DATES = sorted(d for d in df['pa_date'].unique().tolist() if d != 'Unknown')
 
 
-def apply_filters(data, args):
+def apply_filters(args):
+    mask = pd.Series(True, index=df.index)
     for param, col in FILTER_MAP:
         vals = args.getlist(param)
         if vals:
-            data = data[data[col].isin(vals)]
+            mask &= df[col].isin(vals)
     date_from = args.get('date_from')
     date_to   = args.get('date_to')
     if date_from:
-        data = data[data['pa_date'] >= date_from]
+        mask &= df['pa_date'] >= date_from
     if date_to:
-        data = data[data['pa_date'] <= date_to]
-    return data
+        mask &= df['pa_date'] <= date_to
+    return df[mask]
 
 
 def fmt(n):
@@ -129,7 +130,7 @@ def _week_stats(wdf):
 
 @app.route('/api/data')
 def get_data():
-    filtered = apply_filters(df.copy(), request.args)
+    filtered = apply_filters(request.args)
 
     # Waterfall totals
     step1 = int(filtered['epa_ques_req_dt'].notna().sum())
