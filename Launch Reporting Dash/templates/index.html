@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Launch Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  background: #fff1eb; font-size: 12px; color: #565656;
+}
+.page-wrap {
+  max-width: 1440px; margin: 0 auto;
+  height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+  background: #fff; box-shadow: 0 0 28px rgba(1,66,106,.18);
+}
+
+/* ── HEADER ──────────────────────────────────────────────── */
+.hdr {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 10px 16px 8px; background: #fff; flex-shrink: 0;
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(to right, #eb0768 30%, #1e91d5 30%, #1e91d5 60%, #ff8f1c 60%, #ff8f1c 85%, #01426a 85%) 1;
+}
+.hdr-logo { height: 28px; display: block; margin-bottom: 5px; }
+.hdr-left h1 { font-size: 24px; font-weight: 700; color: #01426a; line-height: 1.2; }
+.hdr-left p { font-size: 9.5px; color: #888; margin-top: 3px; }
+.hdr-right { text-align: right; flex-shrink: 0; padding-top: 2px; }
+.hdr-date { font-size: 10px; color: #888; line-height: 1.6; }
+.hdr-date span { font-weight: 600; color: #01426a; }
+.warning { color: #eb0768; font-weight: 700; font-size: 10.5px; margin-top: 4px; }
+
+/* ── BODY ─────────────────────────────────────────────────── */
+.body { display: flex; flex: 1; overflow: hidden; }
+
+/* ── SIDEBAR ──────────────────────────────────────────────── */
+.sidebar {
+  width: 180px; min-width: 180px; background: #fdf6f1;
+  border-right: 2px solid #ff8f1c; overflow-y: auto;
+  padding: 8px 6px; display: flex; flex-direction: column; gap: 2px;
+  flex-shrink: 0;
+}
+.sidebar-title {
+  font-size: 13px; font-weight: 700; color: #01426a;
+  padding: 2px 2px 6px; border-bottom: 1px solid #d0d3d4; margin-bottom: 4px;
+  letter-spacing: .3px;
+}
+.clear-btn {
+  width: 22px; height: 22px; background: #eb0768; color: #fff;
+  border: none; cursor: pointer; font-weight: 700; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px; flex-shrink: 0;
+}
+.clear-btn:hover { background: #c5005a; }
+.filter-item { position: relative; }
+.filter-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 3px 4px; cursor: pointer; font-size: 12px; user-select: none;
+  border-radius: 2px; min-height: 22px;
+}
+.filter-row:hover { background: #e2e6ea; }
+.filter-name {
+  color: #01426a; font-weight: 500;
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.filter-badge {
+  background: #ff8f1c; color: #fff; border-radius: 8px;
+  font-size: 9px; font-weight: 700; padding: 0 4px; min-width: 14px;
+  text-align: center; margin-left: 4px; flex-shrink: 0;
+}
+.filter-arrow { color: #888; font-size: 9px; margin-left: 3px; flex-shrink: 0; }
+.dropdown-portal {
+  position: fixed; background: #fff; border: 1px solid #ccc;
+  border-radius: 3px; box-shadow: 0 4px 14px rgba(0,0,0,.18);
+  z-index: 9999; max-height: 220px; overflow-y: auto; min-width: 180px;
+}
+.dropdown-portal label {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px; cursor: pointer; font-size: 11.5px; white-space: nowrap;
+}
+.dropdown-portal label:hover { background: #f0f4f8; }
+.dropdown-portal input[type=checkbox] { accent-color: #ff8f1c; }
+.date-section {
+  border-top: 1px solid #d0d3d4; margin-top: 6px; padding-top: 6px;
+}
+.date-label { font-size: 11px; font-weight: 700; color: #01426a; margin-bottom: 4px; }
+.date-row { display: flex; flex-direction: column; gap: 3px; margin-bottom: 4px; }
+.date-row span { font-size: 10px; color: #666; }
+.date-row input[type=date] {
+  width: 100%; font-size: 10.5px; padding: 2px 3px;
+  border: 1px solid #ccc; border-radius: 2px; color: #333;
+}
+.date-preset {
+  width: 100%; font-size: 10px; padding: 2px 3px; margin-bottom: 5px;
+  border: 1px solid #ccc; border-radius: 2px; color: #333;
+  cursor: pointer;
+}
+.reset-btn {
+  width: 100%; font-size: 10px; padding: 3px 0; cursor: pointer;
+  border: 1px solid #eb0768; color: #eb0768; background: #fff;
+  border-radius: 2px; margin-top: 2px;
+}
+.reset-btn:hover { background: #eb0768; color: #fff; }
+
+/* ── MAIN ─────────────────────────────────────────────────── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── CHART ROW ────────────────────────────────────────────── */
+.chart-row {
+  display: flex; gap: 0; border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0; height: 320px;
+}
+.chart-panel {
+  border-right: 1px solid #e0e0e0; padding: 8px 10px 4px;
+  display: flex; flex-direction: column;
+}
+.chart-panel:last-child { border-right: none; }
+.chart-panel-title {
+  font-size: 11px; font-weight: 700; color: #01426a;
+  border-left: 3px solid #ff8f1c; padding-left: 6px;
+  margin-bottom: 6px; flex-shrink: 0;
+}
+.chart-panel canvas { flex: 1; }
+
+/* Waterfall panel: wider */
+.panel-waterfall { flex: 2.2; padding-bottom: 28px; }
+/* Creator Type */
+.panel-creator  { flex: 1.4; padding-bottom: 24px; }
+/* Right column stacked */
+.panel-right    { flex: 1.4; display: flex; flex-direction: column; border-right: none; padding: 0; }
+.panel-messaging { flex: 1; min-height: 0; overflow: hidden; border-bottom: 1px solid #e0e0e0; padding: 8px 10px 4px; display: flex; flex-direction: column; }
+.panel-outcome  { flex: 1; min-height: 0; overflow: hidden; padding: 8px 10px 4px; display: flex; flex-direction: column; }
+.panel-messaging canvas, .panel-outcome canvas { flex: 1; min-height: 0; }
+.panel-messaging .chart-panel-title,
+.panel-outcome .chart-panel-title {
+  font-size: 11px; font-weight: 700; color: #01426a;
+  border-left: 3px solid #ff8f1c; padding-left: 6px;
+  margin-bottom: 4px; flex-shrink: 0;
+}
+
+/* ── TABLE SECTION ────────────────────────────────────────── */
+.table-section { flex: 1; overflow: auto; padding: 0; }
+.table-header-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 12px; background: #fff1eb;
+  border-top: 2px solid #ff8f1c; border-bottom: 1px solid #e8c8b0;
+  flex-shrink: 0;
+}
+.table-header-bar .section-title {
+  font-size: 12px; font-weight: 700; color: #01426a;
+  border-left: 3px solid #ff8f1c; padding-left: 6px;
+}
+.export-btn {
+  font-size: 10px; padding: 3px 10px; cursor: pointer;
+  background: #ff8f1c; color: #fff; border: none; border-radius: 2px;
+  font-weight: 600;
+}
+.export-btn:hover { background: #e07a10; }
+table {
+  width: 100%; border-collapse: collapse; font-size: 11px;
+}
+thead th {
+  background: #01426a; color: #fff; padding: 5px 8px;
+  text-align: right; white-space: nowrap; position: sticky; top: 0;
+  cursor: pointer; user-select: none;
+}
+thead th:first-child { text-align: left; }
+thead th.sort-asc::after  { content: ' ↑'; color: #eb0768; }
+thead th.sort-desc::after { content: ' ↓'; color: #eb0768; }
+tbody tr:nth-child(even) { background: #fff1eb; }
+tbody tr:hover { background: #ffe5cc; }
+td { padding: 4px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid #eee; }
+td:first-child { text-align: left; font-weight: 600; color: #01426a; }
+td.rate { color: #01426a; font-weight: 600; }
+td.highlight { background: #ff8f1c; color: #fff; font-weight: 700; }
+tfoot td {
+  background: #01426a; color: #fff; font-weight: 700;
+  padding: 5px 8px; text-align: right; border-top: 2px solid #ff8f1c;
+}
+tfoot td:first-child { text-align: left; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-left">
+      <img src="/logo" class="hdr-logo" alt="CoverMyMeds">
+      <h1>Launch Dashboard</h1>
+      <p>Prior Authorization workflow metrics — ePA initiation through PA response</p>
+    </div>
+    <div class="hdr-right">
+      <div class="hdr-date">
+        Dates Shown: <span id="datesShown">None – None</span><br>
+        Data Source Updated: <span>6/3/2026 11:43:01 AM</span>
+      </div>
+      <div class="warning">⚠ Do not share externally</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-title">FILTERS</div>
+      <button class="clear-btn" title="Clear all filters" onclick="clearAll()">✕</button>
+
+      <div class="filter-item" id="fi-parent_plan">
+        <div class="filter-row" onclick="toggleDropdown('parent_plan')">
+          <span class="filter-name">Parent Plan Name</span>
+          <span class="filter-badge" id="badge-parent_plan" style="display:none"></span>
+          <span class="filter-arrow">▼</span>
+        </div>
+      </div>
+
+      <div class="filter-item" id="fi-plan_name">
+        <div class="filter-row" onclick="toggleDropdown('plan_name')">
+          <span class="filter-name">Plan Name</span>
+          <span class="filter-badge" id="badge-plan_name" style="display:none"></span>
+          <span class="filter-arrow">▼</span>
+        </div>
+      </div>
+
+      <div class="filter-item" id="fi-drug_name">
+        <div class="filter-row" onclick="toggleDropdown('drug_name')">
+          <span class="filter-name">Drug Name</span>
+          <span class="filter-badge" id="badge-drug_name" style="display:none"></span>
+          <span class="filter-arrow">▼</span>
+        </div>
+      </div>
+
+      <div class="filter-item" id="fi-creator_type">
+        <div class="filter-row" onclick="toggleDropdown('creator_type')">
+          <span class="filter-name">Creator Type</span>
+          <span class="filter-badge" id="badge-creator_type" style="display:none"></span>
+          <span class="filter-arrow">▼</span>
+        </div>
+      </div>
+
+      <div class="filter-item" id="fi-revenue_source">
+        <div class="filter-row" onclick="toggleDropdown('revenue_source')">
+          <span class="filter-name">PA Starter</span>
+          <span class="filter-badge" id="badge-revenue_source" style="display:none"></span>
+          <span class="filter-arrow">▼</span>
+        </div>
+      </div>
+
+      <div class="filter-item" id="fi-outcome">
+        <div class="filter-row" onclick="toggleDropdown('outcome')">
+          <span class="filter-name">Outcome</span>
+          <span class="filter-badge" id="badge-outcome" style="display:none"></span>
+          <span class="filter-arrow">▼</span>
+        </div>
+      </div>
+
+      <!-- Date range -->
+      <div class="date-section">
+        <div class="date-label">Initiated</div>
+        <select class="date-preset" id="datePreset" onchange="applyPreset()">
+          <option value="">All dates</option>
+          <option value="7">Last 7 days</option>
+          <option value="14">Last 14 days</option>
+          <option value="30">Last 30 days</option>
+        </select>
+        <div class="date-row">
+          <span>From</span>
+          <input type="date" id="dateFrom" onchange="onDateInput()">
+        </div>
+        <div class="date-row">
+          <span>To</span>
+          <input type="date" id="dateTo" onchange="onDateInput()">
+        </div>
+        <button class="reset-btn" onclick="resetDates()">Reset dates</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+      <!-- CHART ROW -->
+      <div class="chart-row">
+
+        <!-- Waterfall -->
+        <div class="chart-panel panel-waterfall">
+          <div class="chart-panel-title">Waterfall</div>
+          <canvas id="chartWaterfall"></canvas>
+        </div>
+
+        <!-- Creator Type -->
+        <div class="chart-panel panel-creator">
+          <div class="chart-panel-title">Creator Type</div>
+          <canvas id="chartCreator"></canvas>
+        </div>
+
+        <!-- Right column: Messaging + Outcome stacked -->
+        <div class="panel-right">
+          <div class="panel-messaging">
+            <div class="chart-panel-title">Messaging</div>
+            <canvas id="chartMessaging"></canvas>
+          </div>
+          <div class="panel-outcome">
+            <div class="chart-panel-title">Outcome</div>
+            <canvas id="chartOutcome"></canvas>
+          </div>
+        </div>
+
+      </div><!-- end chart-row -->
+
+      <!-- TABLE SECTION -->
+      <div class="table-section">
+        <div class="table-header-bar">
+          <span class="section-title">Waterfall Detail</span>
+          <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+        </div>
+        <div id="tableWrap"></div>
+      </div>
+
+    </div><!-- end main -->
+  </div><!-- end body -->
+</div><!-- end page-wrap -->
+
+<!-- Dropdown portals appended to body dynamically -->
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const appState = {
+  filters: {
+    parent_plan:    [],
+    plan_name:      [],
+    drug_name:      [],
+    creator_type:   [],
+    revenue_source: [],
+    outcome:        [],
+  },
+  filterOpts: {},
+  openDropdown: null,
+  sortCol: null,
+  sortDir: 'desc',
+  lastDetail: [],
+};
+
+// ── CMM Colors ─────────────────────────────────────────────────────────────
+const CMM = {
+  orange:  '#ff8f1c',
+  magenta: '#eb0768',
+  navy:    '#01426a',
+  blue:    '#1e91d5',
+  cream:   '#fff1eb',
+  gray:    '#c8bdb8',
+};
+
+const STEP_COLORS = [CMM.orange, CMM.navy, CMM.blue, CMM.magenta, '#6ab04c', '#7b68ee'];
+const OUTCOME_COLORS = { Approved: '#6ab04c', Denied: CMM.magenta, 'N/A': CMM.gray };
+const CREATOR_COLORS = { EHR: CMM.navy, Pharmacy: CMM.orange, Physician: CMM.blue };
+const MSG_COLOR = CMM.blue;
+
+// ── Charts ─────────────────────────────────────────────────────────────────
+let chartWaterfall, chartCreator, chartMessaging, chartOutcome;
+
+function fmtN(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return n.toLocaleString();
+}
+
+function initCharts() {
+  ChartDataLabels; // ensure plugin registered
+
+  // Waterfall
+  chartWaterfall = new Chart(document.getElementById('chartWaterfall'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 14 } },
+      plugins: {
+        legend: {
+          display: true, position: 'bottom',
+          labels: {
+            font: { size: 8 }, boxWidth: 10, padding: 6,
+            generateLabels: () => [
+              { text: 'Step 1 PA Initiation',    fillStyle: CMM.orange, strokeStyle: CMM.orange, lineWidth: 0, hidden: false },
+              { text: 'Step 2 PA Init Response', fillStyle: CMM.navy,   strokeStyle: CMM.navy,   lineWidth: 0, hidden: false },
+              { text: 'Step 3 PA Request',       fillStyle: '#6ab04c',  strokeStyle: '#6ab04c',  lineWidth: 0, hidden: false },
+              { text: 'Step 4 PA Response',      fillStyle: '#7b68ee',  strokeStyle: '#7b68ee',  lineWidth: 0, hidden: false },
+            ],
+          },
+        },
+        datalabels: {
+          anchor: 'end', align: 'end', color: '#333',
+          font: { size: 9, weight: '700' },
+          formatter: v => fmtN(v),
+        },
+      },
+      scales: {
+        x: { ticks: { font: { size: 9 }, color: CMM.navy, maxRotation: 30 } },
+        y: { ticks: { font: { size: 9 }, callback: v => fmtN(v) }, grid: { color: '#f0f0f0' } },
+      },
+    },
+    plugins: [ChartDataLabels],
+  });
+
+  // Creator Type
+  chartCreator = new Chart(document.getElementById('chartCreator'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 18 } },
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          anchor: 'end', align: 'end', clip: false, color: '#333',
+          font: { size: 9, weight: '700' },
+          formatter: (v, ctx) => {
+            const pct = ctx.chart.data.datasets[0].pcts?.[ctx.dataIndex];
+            return pct != null ? pct.toFixed(1) + '%' : fmtN(v);
+          },
+        },
+      },
+      scales: {
+        x: { ticks: { font: { size: 10 }, color: CMM.navy } },
+        y: { ticks: { font: { size: 9 }, callback: v => fmtN(v) }, grid: { color: '#f0f0f0' } },
+      },
+    },
+    plugins: [ChartDataLabels],
+  });
+
+  // Messaging — vertical bar
+  chartMessaging = new Chart(document.getElementById('chartMessaging'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ data: [], backgroundColor: MSG_COLOR }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 18 } },
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          anchor: 'end', align: 'end', clip: false, color: '#333',
+          font: { size: 8, weight: '700' },
+          formatter: v => fmtN(v),
+        },
+      },
+      scales: {
+        x: { ticks: { font: { size: 8 }, color: CMM.navy } },
+        y: { ticks: { font: { size: 8 }, callback: v => fmtN(v) }, grid: { color: '#f0f0f0' } },
+      },
+    },
+    plugins: [ChartDataLabels],
+  });
+
+  // Outcome
+  chartOutcome = new Chart(document.getElementById('chartOutcome'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 18 } },
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          anchor: 'end', align: 'end', clip: false, color: '#333',
+          font: { size: 9, weight: '700' },
+          formatter: (v, ctx) => {
+            const pct = ctx.chart.data.datasets[0].pcts?.[ctx.dataIndex];
+            return pct != null ? pct.toFixed(1) + '%' : fmtN(v);
+          },
+        },
+      },
+      scales: {
+        x: { ticks: { font: { size: 9 }, color: CMM.navy } },
+        y: { ticks: { font: { size: 9 }, callback: v => fmtN(v) }, grid: { color: '#f0f0f0' } },
+      },
+    },
+    plugins: [ChartDataLabels],
+  });
+}
+
+// ── Query string builder ────────────────────────────────────────────────────
+function buildQS() {
+  const p = new URLSearchParams();
+  for (const [key, vals] of Object.entries(appState.filters)) {
+    vals.forEach(v => p.append(key, v));
+  }
+  const df = document.getElementById('dateFrom').value;
+  const dt = document.getElementById('dateTo').value;
+  if (df) p.set('date_from', df);
+  if (dt) p.set('date_to', dt);
+  return p.toString();
+}
+
+// ── Load data ───────────────────────────────────────────────────────────────
+async function loadData() {
+  const qs = buildQS();
+  const res = await fetch('/api/data?' + qs);
+  const d = await res.json();
+  updateDashboard(d);
+  updateDatesShown();
+}
+
+function updateDatesShown() {
+  const df = document.getElementById('dateFrom').value;
+  const dt = document.getElementById('dateTo').value;
+  document.getElementById('datesShown').textContent =
+    (df || 'None') + ' – ' + (dt || 'None');
+}
+
+// ── Update dashboard ────────────────────────────────────────────────────────
+function updateDashboard(d) {
+  // Waterfall chart
+  const wf = d.waterfall;
+  const wfLabels = [
+    'Step 1\nPA Init', 'Step 2\nInit Resp',
+    'Question\nSets', 'Messaging',
+    'Step 3\nPA Request', 'Step 4\nPA Resp',
+  ];
+  const wfData = [wf.step1, wf.step2, wf.ques_sets, wf.messaging, wf.step3, wf.step4];
+  chartWaterfall.data.labels = wfLabels;
+  chartWaterfall.data.datasets[0].data = wfData;
+  chartWaterfall.data.datasets[0].backgroundColor = STEP_COLORS;
+  chartWaterfall.update();
+
+  // Creator Type chart
+  const ct = d.creator;
+  chartCreator.data.labels = ct.map(r => r.label);
+  chartCreator.data.datasets[0].data = ct.map(r => r.count);
+  chartCreator.data.datasets[0].backgroundColor = ct.map(r => CREATOR_COLORS[r.label] || CMM.blue);
+  chartCreator.data.datasets[0].pcts = ct.map(r => r.pct);
+  chartCreator.update();
+
+  // Messaging chart
+  const msg = d.messaging;
+  chartMessaging.data.labels = msg.map(r => r.code);
+  chartMessaging.data.datasets[0].data = msg.map(r => r.count);
+  chartMessaging.update();
+
+  // Outcome chart
+  const oc = d.outcome;
+  chartOutcome.data.labels = oc.map(r => r.label);
+  chartOutcome.data.datasets[0].data = oc.map(r => r.count);
+  chartOutcome.data.datasets[0].backgroundColor = oc.map(r => OUTCOME_COLORS[r.label] || CMM.gray);
+  chartOutcome.data.datasets[0].pcts = oc.map(r => r.pct);
+  chartOutcome.update();
+
+  // Table
+  appState.lastDetail = d.detail;
+  renderTable(d.detail);
+}
+
+// ── Table ───────────────────────────────────────────────────────────────────
+const TABLE_COLS = [
+  { key: 'date',          label: 'Date',                  fmt: v => v },
+  { key: 'step1',         label: 'Step 1\nPA Init Req',   fmt: v => v.toLocaleString() },
+  { key: 'step2',         label: 'Step 2\nInit Resp',     fmt: v => v.toLocaleString() },
+  { key: 'tat12',         label: 'Avg TAT\n(1-2) Sec',    fmt: v => v.toFixed(1) },
+  { key: 'ques_sets',     label: 'Question\nSets',        fmt: v => v.toLocaleString() },
+  { key: 'messaging',     label: 'Messaging',             fmt: v => v.toLocaleString() },
+  { key: 'step3',         label: 'Step 3\nPA Request',    fmt: v => v.toLocaleString() },
+  { key: 'step4',         label: 'Step 4\nPA Resp',       fmt: v => v.toLocaleString() },
+  { key: 'tat34',         label: 'Avg TAT\n(3-4) Sec',    fmt: v => v.toFixed(1) },
+  { key: 'approvals',     label: 'Approvals',             fmt: v => v.toLocaleString() },
+  { key: 'auto_approvals',label: 'Auto\nApprovals',       fmt: v => v.toLocaleString() },
+  { key: 'auto_rate',     label: 'Auto\nRate',            fmt: v => v.toFixed(1) + '%', cls: 'rate' },
+  { key: 'denials',       label: 'Denials',               fmt: v => v.toLocaleString() },
+];
+
+function renderTable(rows) {
+  const { sortCol, sortDir } = appState;
+
+  const sorted = [...rows].sort((a, b) => {
+    if (!sortCol) return 0;
+    const av = a[sortCol], bv = b[sortCol];
+    const cmp = typeof av === 'string' ? av.localeCompare(bv) : av - bv;
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  // Totals row
+  const totals = {};
+  TABLE_COLS.forEach(c => {
+    if (c.key === 'date') { totals[c.key] = 'TOTAL'; return; }
+    if (c.key === 'auto_rate') { totals[c.key] = null; return; }
+    if (['tat12', 'tat34'].includes(c.key)) {
+      const vals = rows.map(r => r[c.key]).filter(v => v > 0);
+      totals[c.key] = vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
+      return;
+    }
+    totals[c.key] = rows.reduce((s, r) => s + (r[c.key] || 0), 0);
+  });
+  if (totals.approvals > 0) {
+    totals.auto_rate = (totals.auto_approvals / totals.approvals * 100);
+  } else {
+    totals.auto_rate = 0;
+  }
+
+  let html = '<table><thead><tr>';
+  TABLE_COLS.forEach((c, i) => {
+    const cls = appState.sortCol === c.key
+      ? ('sort-' + appState.sortDir) : '';
+    const label = c.label.replace(/\n/g, '<br>');
+    html += `<th class="${cls}" onclick="sortBy('${c.key}')">${label}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  sorted.forEach(r => {
+    html += '<tr>';
+    TABLE_COLS.forEach(c => {
+      const cls = c.cls ? ` class="${c.cls}"` : '';
+      html += `<td${cls}>${c.fmt(r[c.key])}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody><tfoot><tr>';
+  TABLE_COLS.forEach(c => {
+    const v = totals[c.key];
+    html += `<td>${v == null ? '—' : c.fmt(v)}</td>`;
+  });
+  html += '</tr></tfoot></table>';
+
+  document.getElementById('tableWrap').innerHTML = html;
+}
+
+function sortBy(col) {
+  if (appState.sortCol === col) {
+    appState.sortDir = appState.sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    appState.sortCol = col;
+    appState.sortDir = 'desc';
+  }
+  renderTable(appState.lastDetail);
+}
+
+// ── Export CSV ──────────────────────────────────────────────────────────────
+function exportCSV() {
+  const rows = appState.lastDetail;
+  if (!rows.length) return;
+  const headers = TABLE_COLS.map(c => c.label.replace(/\n/g, ' '));
+  const lines = [headers.join(',')];
+  rows.forEach(r => {
+    lines.push(TABLE_COLS.map(c => c.fmt(r[c.key])).join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `launch_detail_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ── Dropdown filter ─────────────────────────────────────────────────────────
+function toggleDropdown(key) {
+  if (appState.openDropdown === key) {
+    closeDropdown();
+    return;
+  }
+  closeDropdown();
+  appState.openDropdown = key;
+
+  const anchor = document.querySelector(`#fi-${key} .filter-row`);
+  const rect   = anchor.getBoundingClientRect();
+  const opts   = appState.filterOpts[key] || [];
+
+  const portal = document.createElement('div');
+  portal.className = 'dropdown-portal';
+  portal.id = 'portal-' + key;
+  portal.style.top  = (rect.bottom + 2) + 'px';
+  portal.style.left = rect.left + 'px';
+
+  opts.forEach(val => {
+    const checked = appState.filters[key].includes(val);
+    const lbl = document.createElement('label');
+    const cb  = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = val;
+    cb.checked = checked;
+    cb.onchange = () => onCheckChange(key, val, cb.checked);
+    lbl.appendChild(cb);
+    lbl.appendChild(document.createTextNode(' ' + val));
+    portal.appendChild(lbl);
+  });
+
+  document.body.appendChild(portal);
+
+  setTimeout(() => {
+    document.addEventListener('click', outsideClick, { once: false });
+  }, 10);
+}
+
+function outsideClick(e) {
+  const portal = document.getElementById('portal-' + appState.openDropdown);
+  if (!portal) return;
+  const anchor = document.querySelector(`#fi-${appState.openDropdown} .filter-row`);
+  if (!portal.contains(e.target) && !anchor.contains(e.target)) {
+    closeDropdown();
+  }
+}
+
+function closeDropdown() {
+  if (appState.openDropdown) {
+    const p = document.getElementById('portal-' + appState.openDropdown);
+    if (p) p.remove();
+    document.removeEventListener('click', outsideClick);
+    appState.openDropdown = null;
+  }
+}
+
+function onCheckChange(key, val, checked) {
+  const arr = appState.filters[key];
+  if (checked) { if (!arr.includes(val)) arr.push(val); }
+  else { const i = arr.indexOf(val); if (i >= 0) arr.splice(i, 1); }
+  updateBadge(key);
+  loadData();
+}
+
+function updateBadge(key) {
+  const badge = document.getElementById('badge-' + key);
+  const n = appState.filters[key].length;
+  badge.textContent = n;
+  badge.style.display = n > 0 ? 'inline-block' : 'none';
+}
+
+function clearAll() {
+  for (const key of Object.keys(appState.filters)) {
+    appState.filters[key] = [];
+    updateBadge(key);
+  }
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  document.getElementById('datePreset').value = '';
+  closeDropdown();
+  updateDatesShown();
+  loadData();
+}
+
+function resetDates() {
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  document.getElementById('datePreset').value = '';
+  updateDatesShown();
+  loadData();
+}
+
+function onDateInput() {
+  document.getElementById('datePreset').value = '';
+  updateDatesShown();
+  loadData();
+}
+
+function applyPreset() {
+  const n = parseInt(document.getElementById('datePreset').value);
+  if (!n) { resetDates(); return; }
+  const max = document.getElementById('dateTo').max;
+  const to   = max || new Date().toISOString().slice(0, 10);
+  const from = new Date(new Date(to) - (n - 1) * 86400000).toISOString().slice(0, 10);
+  document.getElementById('dateFrom').value = from;
+  document.getElementById('dateTo').value   = to;
+  updateDatesShown();
+  loadData();
+}
+
+// ── Init ────────────────────────────────────────────────────────────────────
+async function init() {
+  initCharts();
+
+  const res = await fetch('/api/filters');
+  const f   = await res.json();
+  appState.filterOpts = f;
+
+  // Set date input bounds from data range
+  if (f.date_min) {
+    document.getElementById('dateFrom').min = f.date_min;
+    document.getElementById('dateTo').min   = f.date_min;
+  }
+  if (f.date_max) {
+    document.getElementById('dateFrom').max = f.date_max;
+    document.getElementById('dateTo').max   = f.date_max;
+  }
+
+  await loadData();
+}
+
+init();
+</script>
+</body>
+</html>
