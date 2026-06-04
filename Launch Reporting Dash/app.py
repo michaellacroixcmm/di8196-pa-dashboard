@@ -27,13 +27,24 @@ def load_data():
     df['tat12_s'] = (df['epa_ques_resp_dt'] - df['epa_ques_req_dt']).dt.total_seconds()
     df['tat34_s'] = (df['epa_pa_resp_dt']   - df['epa_pa_req_dt']).dt.total_seconds()
 
-    # Fill string columns
+    # Drop raw datetime strings — already parsed to _dt columns above
+    df.drop(columns=['epa_ques_req','epa_ques_resp','epa_pa_req','epa_pa_resp',
+                     'ques_set','epa_ques_resp_mess'], inplace=True)
+
+    # Daily date from actual request datetime
+    df['pa_date'] = df['epa_ques_req_dt'].dt.strftime('%Y-%m-%d').fillna('Unknown')
+
+    # Fill remaining string columns
     for col in df.select_dtypes(include=['object']).columns:
         df[col] = df[col].fillna('Unknown')
     df['outcome'] = df['outcome'].replace('Unknown', 'N/A')
 
-    # Daily date from actual request datetime
-    df['pa_date'] = df['epa_ques_req_dt'].dt.strftime('%Y-%m-%d').fillna('Unknown')
+    # Convert repetitive string columns to category to cut memory ~60%
+    cat_cols = ['parent_plan_name','plan_name','drug_name','creator_user_type',
+                'revenue_source','outcome','reason_code','pa_date']
+    for col in cat_cols:
+        if col in df.columns:
+            df[col] = df[col].astype('category')
 
     return df
 
