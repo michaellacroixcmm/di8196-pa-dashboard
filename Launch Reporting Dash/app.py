@@ -59,13 +59,15 @@ def apply_filters(args):
     for param, col in FILTER_MAP:
         vals = args.getlist(param)
         if vals:
-            mask &= df[col].isin(vals)
+            mask &= df[col].astype(str).isin(vals)
     date_from = args.get('date_from')
     date_to   = args.get('date_to')
+    # Cast to str to avoid TypeError on unordered Categorical comparisons
+    pa_date_str = df['pa_date'].astype(str)
     if date_from:
-        mask &= df['pa_date'] >= date_from
+        mask &= pa_date_str >= date_from
     if date_to:
-        mask &= df['pa_date'] <= date_to
+        mask &= pa_date_str <= date_to
     return df[mask]
 
 

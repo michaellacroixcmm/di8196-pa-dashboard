@@ -497,6 +497,10 @@ function buildQS() {
 async function loadData() {
   const qs = buildQS();
   const res = await fetch('/api/data?' + qs);
+  if (!res.ok) {
+    console.error('API /api/data error', res.status, await res.text());
+    return;
+  }
   const d = await res.json();
   updateDashboard(d);
   updateDatesShown();
